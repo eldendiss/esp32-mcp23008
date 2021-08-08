@@ -34,6 +34,7 @@ static const char *TAG = "MCP23008";
 static esp_err_t mcp23008_read_reg(mcp23008_t *mcp, uint8_t reg, uint8_t *d) {
     CHECK_ARG(mcp);
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_set_timeout(mcp->port,400000);
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (mcp->address << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, reg, ACK_CHECK_EN);
@@ -42,7 +43,7 @@ static esp_err_t mcp23008_read_reg(mcp23008_t *mcp, uint8_t reg, uint8_t *d) {
     esp_err_t ret = i2c_master_cmd_begin(mcp->port, cmd, 1000/portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
     if( ret != ESP_OK ) {
-        ESP_LOGE(TAG,"Error reading register %d",reg);
+        ESP_LOGE(TAG,"Error reading register %d %d",reg, ret);
         return ESP_FAIL;
     }
     vTaskDelay(30/portTICK_RATE_MS);
@@ -56,7 +57,7 @@ static esp_err_t mcp23008_read_reg(mcp23008_t *mcp, uint8_t reg, uint8_t *d) {
     ret = i2c_master_cmd_begin(mcp->port, cmd, 1000/portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
     if( ret != ESP_OK ) {
-        ESP_LOGE(TAG,"Error reading register %d",reg);
+        ESP_LOGE(TAG,"Error reading register %d %d",reg,ret);
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -65,7 +66,7 @@ static esp_err_t mcp23008_read_reg(mcp23008_t *mcp, uint8_t reg, uint8_t *d) {
 static esp_err_t mcp23008_write_reg(mcp23008_t *mcp, uint8_t reg, uint8_t d) {
     CHECK_ARG(mcp);
 
-    ESP_LOGI(TAG,"write reg MCP port %d address %d", mcp->port, mcp->address);
+    //ESP_LOGI(TAG,"write reg MCP port %d address %d", mcp->port, mcp->address);
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_set_timeout(mcp->port,400000);
     i2c_master_start(cmd);
@@ -76,6 +77,7 @@ static esp_err_t mcp23008_write_reg(mcp23008_t *mcp, uint8_t reg, uint8_t d) {
 
     esp_err_t ret = i2c_master_cmd_begin(mcp->port, cmd, 1000/portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
+    mcp->current=d;
     if( ret != ESP_OK ) {
         ESP_LOGE(TAG,"Error writing register %x %x",reg, ret);
         return ESP_FAIL;
